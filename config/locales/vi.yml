@@ -1,5 +1,25 @@
 vi:
   hello: "Xin chào"
-  title: "Ứng dụng mẫu Ruby on Rails Tutorial"
-  engli: "tiếng anh"
-  vietn: "tiếng việt"
+  layouts:
+    application:
+      title: "Ứng dụng mẫu Ruby on Rails Tutorial"
+      language: "ngôn ngữ"
+      en: "tiếng anh"
+      vi: "tiếng việt"
+  static_pages:
+    home:
+      title: "Trang chủ"
+      content_1: "Đây là trang chủ của "
+      content_2: "sample application."
+      link_title_1: "Hướng dẫn về Ruby on Rails"
+    help:
+      title: "Trợ giúp"
+      content_1: "Bạn có thể tìm trợ giúp ở the Ruby on Rails Tutorial tại "
+      content_2: "Để hiểu thêm về trang web, truy cập "
+      content_3: "Hướng dẫn về Ruby on Rails"
+      content_4: "sách."
+      link_title_1: "Trang trợ giúp hướng dẫn Rails"
+    about:
+      title: "Về chúng tôi"
+    contact:
+      title: "Liên lạc"

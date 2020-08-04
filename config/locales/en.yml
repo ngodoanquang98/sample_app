@@ -1,6 +1,26 @@
 en:
   hello: "Hello world"
-  title: "Ruby on Rails Tutorial Sample App"
-  engli: "English"
-  vietn: "Vietnamese"
+  layouts:
+    application:
+      title: "Ruby on Rails Tutorial Sample App"
+      language: "language"
+      en: "english"
+      vi: "vietnamese"
+  static_pages:
+    home:
+      title: "Home"
+      content_1: "This is the home page for the"
+      content_2: "sample application."
+      link_title_1: "Ruby on Rails Tutorial"
+    help:
+      title: "Help"
+      content_1: "Get help on the Ruby on Rails Tutorial at the"
+      content_2: "To get help on this sample app, see the"
+      content_3: "Ruby on Rails Tutorial"
+      content_4: "book."
+      link_title_1: "Rails Tutorial help section"
+    about:
+      title: "About us"
+    contact:
+      title: "Contact us"
 
