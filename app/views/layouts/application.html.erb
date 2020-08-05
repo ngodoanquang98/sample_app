@@ -7,6 +7,7 @@
 
     <%= stylesheet_link_tag "application", media: "all", "data-turbolinks-track": "reload" %>
     <%= javascript_pack_tag "application", "data-turbolinks-track": "reload" %>
+    <%= render "layouts/shim" %>
   </head>
 
   <body>
@@ -15,6 +16,10 @@
       <%= link_to t(".en"), locale: "en" %> |
       <%= link_to t(".vi"), locale: "vi" %>
     </span>
-    <%= yield %>
+    <%= render "layouts/header" %>
+    <div class="container">
+      <%= yield %>
+      <%= render "layouts/footer"%>
+    </div>
   </body>
 </html>

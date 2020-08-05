@@ -1,17 +1,30 @@
 vi:
-  hello: "Xin chào"
   layouts:
     application:
       title: "Ứng dụng mẫu Ruby on Rails Tutorial"
       language: "ngôn ngữ"
       en: "tiếng anh"
       vi: "tiếng việt"
+    footer:
+      content_1: "hướng dẫn lập trình Rails bởi"
+      link_title_michael_hartl: "Michael Hartl"
+      link_title_contact_page: "Liên lạc"
+      link_title_about_page: "Về chúng tôi"
+      link_title_rails_page: "Tin tức"
+    header:
+      logo_content: "Sample App"
+      link_title_home_page: "Trang chủ"
+      link_title_help_page: "giúp đỡ"
+      link_title_log_in_page: "Đăng nhập"
   static_pages:
     home:
       title: "Trang chủ"
       content_1: "Đây là trang chủ của "
       content_2: "sample application."
+      content_3: "Chào mừng đến với Sample App"
       link_title_1: "Hướng dẫn về Ruby on Rails"
+      link_title_2: "Đăng ký!"
+      link_title_3: "Kitten!!"
     help:
       title: "Trợ giúp"
       content_1: "Bạn có thể tìm trợ giúp ở the Ruby on Rails Tutorial tại "
@@ -23,3 +36,7 @@ vi:
       title: "Về chúng tôi"
     contact:
       title: "Liên lạc"
+  users:
+    new:
+      title: "Đăng ký"
+      content_1: "Tạo tài khoản mới!"
