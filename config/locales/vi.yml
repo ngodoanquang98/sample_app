@@ -39,4 +39,17 @@ vi:
   users:
     new:
       title: "Đăng ký"
+      name: tên
+      email: thư điện tử
+      password: mật khẩu
+      password_confirmation: nhập lại mật khẩu
+      create_account: tạo mới tài khoản
       content_1: "Tạo tài khoản mới!"
+      sign_up_btn: "Tạo tài khoản"
+      success_notify: "Welcome to Sample App!"
+      faild_notify: "Thất bại. Làm ơn thử lại!"
+      user_not_found: "Không tìm thấy người dùng !"
+  shared:
+    error_messages:
+      messgage_error: "Xảy ra lỗi : "
+      errors: "lỗi "
