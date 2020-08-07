@@ -66,6 +66,7 @@ vi:
       log_in: "Đăng nhập"
       sign_up_now: "Đăng ký!"
       new_user: "Bạn chưa có tài khoản?"
+      remember_checkbox: "Ghi nhớ mật khẩu trên thiết bị này"
     create:
       success_login_notify: "Đăng nhập thành công"
       faild_login_notify: "Email hoặc mật khẩu bị sai"
