@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  USERS_PARAMS = %i(name email password password_confirmation).freeze
+
   validates :name,
             presence: true,
             length: {maximum: Settings.validate.user.max_length_name}
@@ -17,6 +19,6 @@ class User < ApplicationRecord
 
   private
   def downcase_email
-    self.email.downcase!
+    email.downcase!
   end
 end
