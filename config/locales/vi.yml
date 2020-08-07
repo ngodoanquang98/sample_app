@@ -12,10 +12,16 @@ vi:
       link_title_about_page: "Về chúng tôi"
       link_title_rails_page: "Tin tức"
     header:
-      logo_content: "Sample App"
+      logo_content: "Shop App"
       link_title_home_page: "Trang chủ"
       link_title_help_page: "giúp đỡ"
       link_title_log_in_page: "Đăng nhập"
+      profile_btn: "hồ sơ"
+      setting_btn: "cài đặt"
+      log_out_btn: "Đăng xuất"
+      log_in_btn: "Đăng nhập"
+      account: "Tài khoản"
+      users: "Người dùng"
   static_pages:
     home:
       title: "Trang chủ"
@@ -39,11 +45,11 @@ vi:
   users:
     new:
       title: "Đăng ký"
-      name: tên
-      email: thư điện tử
-      password: mật khẩu
-      password_confirmation: nhập lại mật khẩu
-      create_account: tạo mới tài khoản
+      name: "tên"
+      email: "thư điện tử"
+      password: "mật khẩu"
+      password_confirmation: "nhập lại mật khẩu"
+      create_account: "tạo mới tài khoản"
       content_1: "Tạo tài khoản mới!"
       sign_up_btn: "Tạo tài khoản"
       success_notify: "Welcome to Sample App!"
@@ -53,3 +59,14 @@ vi:
     error_messages:
       messgage_error: "Xảy ra lỗi : "
       errors: "lỗi "
+  sessions:
+    new:
+      email: "thư điện tử"
+      password: "mật khẩu"
+      log_in: "Đăng nhập"
+      sign_up_now: "Đăng ký!"
+      new_user: "Bạn chưa có tài khoản?"
+    create:
+      success_login_notify: "Đăng nhập thành công"
+      faild_login_notify: "Email hoặc mật khẩu bị sai"
+      flash: "Đăng xuất thành công!!"
