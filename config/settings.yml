@@ -7,6 +7,9 @@ link:
   footer:
     link_to_railstutorial: "https://www.railstutorial.org/"
     link_to_michaelhartl: "https://www.michaelhartl.com/"
+  user:
+    edit:
+      gravatar_link: "https://gravatar.com/emails"
 validate:
   user:
     max_length_name: 50
@@ -15,3 +18,9 @@ validate:
     validate_email_regex: !ruby/regexp /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
 size_avatar: 80
 fomat_date: "%H:%M %Y/%m/%d"
+images:
+  avatar_size_in_all_users: 50
+paginate:
+  items_per_page: 10
+sessions:
+  remember_me: 1

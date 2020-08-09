@@ -6,6 +6,8 @@
     <% link_to t(".link_title_1"), Settings.link.home.link_1 %>
     <%= t ".content_2" %>
   </h2>
-  <%= link_to t(".link_title_2"), signup_path, class: "btn btn-lg btn-primary" %>
+  <% unless logged_in? %>
+    <%= link_to t(".link_title_2"), signup_path, class: "btn btn-lg btn-primary" %>
+  <% end %>
 </div>
 <%= link_to image_tag("meo.jpg", alt: t(".link_title_3"), width: "25%"),Settings.link.home.link_1 %>

@@ -5,7 +5,8 @@ class User < ApplicationRecord
 
   validates :name,
             presence: true,
-            length: {maximum: Settings.validate.user.max_length_name}
+            length: {maximum: Settings.validate.user.max_length_name},
+            allow_nil: true
   validates :email,
             presence: true,
             length: {maximum: Settings.validate.user.max_length_email},
