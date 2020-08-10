@@ -43,12 +43,30 @@ en:
     contact:
       title: "Contact us"
   users:
-    new:
-      title: "Sign up"
+    log_in_suggest: "Please log in."
+    delete_user_success_notify: "User deleted"
+    delete_user_faild_notify: "Can not delete user"
+    can_not_find_user: "Can not find user"
+    form:
       name: "name"
       email: "email"
       password: "password"
       password_confirmation: "Confirmation"
+    user:
+      space_with_delete: " | "
+      delete_user: "Delete"
+      confirm_delete_user: "You sure?"
+    edit:
+      title: "Edit user"
+      update_profile: "Update your profile"
+      submit_btn: "Save changes"
+      change_avatar: "Change"
+      success_edit_user_notify: "Profile updated"
+      faild_edit_user_notify: "Failed!"
+    index:
+      title: "All users"
+    new:
+      title: "Sign up"
       create_account: "Create my account"
       content_1: "This will be a signup page for new users."
       sign_up_btn: "Create my account"

@@ -14,14 +14,14 @@ vi:
     header:
       logo_content: "Shop App"
       link_title_home_page: "Trang chủ"
-      link_title_help_page: "giúp đỡ"
+      link_title_help_page: "Giúp đỡ"
       link_title_log_in_page: "Đăng nhập"
       profile_btn: "hồ sơ"
       setting_btn: "cài đặt"
       log_out_btn: "Đăng xuất"
       log_in_btn: "Đăng nhập"
       account: "Tài khoản"
-      users: "Người dùng"
+      users: "Danh sách người dùng"
   static_pages:
     home:
       title: "Trang chủ"
@@ -43,16 +43,34 @@ vi:
     contact:
       title: "Liên lạc"
   users:
-    new:
-      title: "Đăng ký"
+    log_in_suggest: "Bạn cần phải đăng nhập."
+    delete_user_success_notify: "Đã xóa tài khoản."
+    delete_user_faild_notify: "Không thể xóa tài khoản"
+    can_not_find_user: "Không thể tìm thấy tài khoản."
+    form:
       name: "tên"
       email: "thư điện tử"
       password: "mật khẩu"
       password_confirmation: "nhập lại mật khẩu"
+    user:
+      space_with_delete: " | "
+      delete_user: "Xóa"
+      confirm_delete_user: "Bạn có muốn xóa tài khoản?"
+    edit:
+      title: "Cài đặt tài khoản"
+      update_profile: "Thay đổi thông tin cá nhân"
+      submit_btn: "Lưu thay đổi"
+      change_avatar: "Thay đổi"
+      success_edit_user_notify: "Update tài khoản thành công"
+      faild_edit_user_notify: "Thất bại!"
+    index:
+      title: "Tất cả tài khoản"
+    new:
+      title: "Đăng ký"
       create_account: "tạo mới tài khoản"
       content_1: "Tạo tài khoản mới!"
       sign_up_btn: "Tạo tài khoản"
-      success_notify: "Welcome to Sample App!"
+      success_notify: "Chào mừng bạn đến với Sample App!"
       faild_notify: "Thất bại. Làm ơn thử lại!"
       user_not_found: "Không tìm thấy người dùng !"
   shared:
