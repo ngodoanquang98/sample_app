@@ -1,0 +1,574 @@
+name: Security Scan - Semgrep and SonarQube
+
+on:
+  # Mỗi lần push code lên các branch chính thì tự scan
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - quangnd
+
+  # Mỗi lần tạo hoặc cập nhật Pull Request thì tự scan
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+  # Cho phép bấm chạy thủ công trong tab Actions
+  workflow_dispatch:
+
+  # Tự động scan mỗi ngày lúc 00:20 giờ Việt Nam
+  # GitHub Actions dùng UTC, 17:20 UTC = 00:20 Việt Nam
+  schedule:
+    - cron: "20 17 * * *"
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  semgrep:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python for Semgrep
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Semgrep and Excel library
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install semgrep openpyxl
+
+      - name: Run Semgrep and create JSON report
+        run: |
+          semgrep scan \
+            --config p/security-audit \
+            --config p/owasp-top-ten \
+            --config p/ruby \
+            --exclude vendor \
+            --exclude tmp \
+            --exclude log \
+            --exclude public/assets \
+            --exclude node_modules \
+            --exclude .git \
+            --json \
+            --output semgrep-results.json \
+            . || true
+
+      - name: Run Semgrep and create SARIF report
+        run: |
+          semgrep scan \
+            --config p/security-audit \
+            --config p/owasp-top-ten \
+            --config p/ruby \
+            --exclude vendor \
+            --exclude tmp \
+            --exclude log \
+            --exclude public/assets \
+            --exclude node_modules \
+            --exclude .git \
+            --sarif \
+            --output semgrep-results.sarif \
+            . || true
+
+      - name: Convert Semgrep JSON report to Excel
+        run: |
+          python - <<'PY'
+          import json
+          from openpyxl import Workbook
+          from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+          input_file = "semgrep-results.json"
+          output_file = "semgrep-results.xlsx"
+
+          with open(input_file, "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          results = data.get("results", [])
+
+          wb = Workbook()
+
+          ws = wb.active
+          ws.title = "Semgrep Findings"
+
+          headers = [
+              "No",
+              "Severity",
+              "Rule ID",
+              "Message",
+              "File",
+              "Start Line",
+              "Start Column",
+              "End Line",
+              "End Column",
+              "CWE",
+              "OWASP",
+              "Confidence",
+              "References"
+          ]
+
+          ws.append(headers)
+
+          header_fill = PatternFill("solid", fgColor="1F4E78")
+          header_font = Font(color="FFFFFF", bold=True)
+          thin = Side(style="thin", color="D9E2F3")
+          border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+          for cell in ws[1]:
+              cell.fill = header_fill
+              cell.font = header_font
+              cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+              cell.border = border
+
+          if not results:
+              ws.append([
+                  1,
+                  "INFO",
+                  "",
+                  "No Semgrep findings detected.",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  ""
+              ])
+          else:
+              for idx, item in enumerate(results, start=1):
+                  extra = item.get("extra", {})
+                  metadata = extra.get("metadata", {})
+
+                  start = item.get("start", {})
+                  end = item.get("end", {})
+
+                  cwe = metadata.get("cwe", "")
+                  if isinstance(cwe, list):
+                      cwe = ", ".join(str(x) for x in cwe)
+
+                  owasp = metadata.get("owasp", "")
+                  if isinstance(owasp, list):
+                      owasp = ", ".join(str(x) for x in owasp)
+
+                  references = metadata.get("references", "")
+                  if isinstance(references, list):
+                      references = "\n".join(str(x) for x in references)
+
+                  ws.append([
+                      idx,
+                      extra.get("severity", ""),
+                      item.get("check_id", ""),
+                      extra.get("message", ""),
+                      item.get("path", ""),
+                      start.get("line", ""),
+                      start.get("col", ""),
+                      end.get("line", ""),
+                      end.get("col", ""),
+                      cwe,
+                      owasp,
+                      metadata.get("confidence", ""),
+                      references
+                  ])
+
+          for row in ws.iter_rows(min_row=2):
+              for cell in row:
+                  cell.alignment = Alignment(vertical="top", wrap_text=True)
+                  cell.border = border
+
+          widths = {
+              "A": 6,
+              "B": 12,
+              "C": 45,
+              "D": 70,
+              "E": 50,
+              "F": 12,
+              "G": 14,
+              "H": 12,
+              "I": 14,
+              "J": 35,
+              "K": 35,
+              "L": 15,
+              "M": 70,
+          }
+
+          for col, width in widths.items():
+              ws.column_dimensions[col].width = width
+
+          ws.freeze_panes = "A2"
+          ws.auto_filter.ref = ws.dimensions
+
+          for row in range(2, ws.max_row + 1):
+              severity = ws[f"B{row}"].value
+
+              if severity == "ERROR":
+                  ws[f"B{row}"].fill = PatternFill("solid", fgColor="F4CCCC")
+              elif severity == "WARNING":
+                  ws[f"B{row}"].fill = PatternFill("solid", fgColor="FFF2CC")
+              elif severity == "INFO":
+                  ws[f"B{row}"].fill = PatternFill("solid", fgColor="D9EAD3")
+
+          summary = wb.create_sheet("Summary")
+          summary.append(["Severity", "Count"])
+
+          counts = {}
+          for item in results:
+              severity = item.get("extra", {}).get("severity", "UNKNOWN")
+              counts[severity] = counts.get(severity, 0) + 1
+
+          if counts:
+              for severity, count in sorted(counts.items()):
+                  summary.append([severity, count])
+          else:
+              summary.append(["No findings", 0])
+
+          for cell in summary[1]:
+              cell.fill = header_fill
+              cell.font = header_font
+              cell.alignment = Alignment(horizontal="center", vertical="center")
+              cell.border = border
+
+          for row in summary.iter_rows(min_row=2):
+              for cell in row:
+                  cell.border = border
+                  cell.alignment = Alignment(vertical="center")
+
+          summary.column_dimensions["A"].width = 20
+          summary.column_dimensions["B"].width = 12
+          summary.auto_filter.ref = summary.dimensions
+
+          wb.save(output_file)
+
+          print(f"Created {output_file}")
+          print(f"Total Semgrep findings: {len(results)}")
+          PY
+
+      - name: Upload Semgrep reports as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-ruby-security-reports
+          path: |
+            semgrep-results.json
+            semgrep-results.sarif
+            semgrep-results.xlsx
+          retention-days: 14
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep-results.sarif
+
+  sonarqube:
+    name: SonarQube Cloud Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run SonarQube Cloud scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Install SonarQube Excel export libraries
+        if: always()
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install openpyxl requests
+
+      - name: Export SonarQube issues to JSON and Excel
+        if: always()
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ngodoanquang98_sample_app
+          SONAR_ORGANIZATION: ngodoanquang98
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import time
+          import requests
+          from openpyxl import Workbook
+          from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+          SONAR_TOKEN = os.environ["SONAR_TOKEN"]
+          PROJECT_KEY = os.environ["SONAR_PROJECT_KEY"]
+          ORGANIZATION = os.environ["SONAR_ORGANIZATION"]
+
+          BASE_URL = "https://sonarcloud.io"
+          OUTPUT_JSON = "sonarqube-issues.json"
+          OUTPUT_XLSX = "sonarqube-issues.xlsx"
+
+          session = requests.Session()
+          session.headers.update({
+              "Authorization": f"Bearer {SONAR_TOKEN}"
+          })
+
+          # Đợi vài giây để SonarQube Cloud cập nhật kết quả analysis mới nhất
+          time.sleep(5)
+
+          all_issues = []
+          page = 1
+          page_size = 500
+
+          while True:
+              params = {
+                  "componentKeys": PROJECT_KEY,
+                  "organization": ORGANIZATION,
+                  "p": page,
+                  "ps": page_size,
+                  "resolved": "false"
+              }
+
+              response = session.get(
+                  f"{BASE_URL}/api/issues/search",
+                  params=params,
+                  timeout=60
+              )
+
+              if response.status_code != 200:
+                  print("Failed to fetch SonarQube issues")
+                  print("Status:", response.status_code)
+                  print(response.text)
+                  response.raise_for_status()
+
+              data = response.json()
+              issues = data.get("issues", [])
+              all_issues.extend(issues)
+
+              paging = data.get("paging", {})
+              total = paging.get("total", len(all_issues))
+
+              if page * page_size >= total:
+                  break
+
+              page += 1
+
+          with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+              json.dump(
+                  {
+                      "projectKey": PROJECT_KEY,
+                      "organization": ORGANIZATION,
+                      "branch": "default branch",
+                      "total": len(all_issues),
+                      "issues": all_issues
+                  },
+                  f,
+                  ensure_ascii=False,
+                  indent=2
+              )
+
+          wb = Workbook()
+
+          header_fill = PatternFill("solid", fgColor="1F4E78")
+          header_font = Font(color="FFFFFF", bold=True)
+          thin = Side(style="thin", color="D9E2F3")
+          border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+          ws = wb.active
+          ws.title = "SonarQube Issues"
+
+          headers = [
+              "No",
+              "Severity",
+              "Type",
+              "Clean Code Attribute",
+              "Software Quality",
+              "Rule",
+              "Message",
+              "Component",
+              "File",
+              "Line",
+              "Status",
+              "Resolution",
+              "Effort",
+              "Debt",
+              "Author",
+              "Creation Date",
+              "Update Date",
+              "Issue Key"
+          ]
+
+          ws.append(headers)
+
+          for cell in ws[1]:
+              cell.fill = header_fill
+              cell.font = header_font
+              cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+              cell.border = border
+
+          if not all_issues:
+              ws.append([
+                  1,
+                  "INFO",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "No SonarQube issues detected.",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  "",
+                  ""
+              ])
+          else:
+              for idx, issue in enumerate(all_issues, start=1):
+                  component = issue.get("component", "")
+                  file_path = component
+
+                  if ":" in component:
+                      file_path = component.split(":", 1)[1]
+
+                  impacts = issue.get("impacts", [])
+                  software_quality = ""
+                  if impacts:
+                      software_quality = ", ".join(
+                          f"{i.get('softwareQuality', '')}:{i.get('severity', '')}"
+                          for i in impacts
+                      )
+
+                  ws.append([
+                      idx,
+                      issue.get("severity", ""),
+                      issue.get("type", ""),
+                      issue.get("cleanCodeAttribute", ""),
+                      software_quality,
+                      issue.get("rule", ""),
+                      issue.get("message", ""),
+                      component,
+                      file_path,
+                      issue.get("line", ""),
+                      issue.get("status", ""),
+                      issue.get("resolution", ""),
+                      issue.get("effort", ""),
+                      issue.get("debt", ""),
+                      issue.get("author", ""),
+                      issue.get("creationDate", ""),
+                      issue.get("updateDate", ""),
+                      issue.get("key", "")
+                  ])
+
+          for row in ws.iter_rows(min_row=2):
+              for cell in row:
+                  cell.alignment = Alignment(vertical="top", wrap_text=True)
+                  cell.border = border
+
+          widths = {
+              "A": 6,
+              "B": 12,
+              "C": 18,
+              "D": 24,
+              "E": 30,
+              "F": 35,
+              "G": 70,
+              "H": 60,
+              "I": 50,
+              "J": 10,
+              "K": 14,
+              "L": 14,
+              "M": 12,
+              "N": 12,
+              "O": 25,
+              "P": 24,
+              "Q": 24,
+              "R": 45,
+          }
+
+          for col, width in widths.items():
+              ws.column_dimensions[col].width = width
+
+          ws.freeze_panes = "A2"
+          ws.auto_filter.ref = ws.dimensions
+
+          for row in range(2, ws.max_row + 1):
+              severity = ws[f"B{row}"].value
+
+              if severity in ("BLOCKER", "CRITICAL", "HIGH"):
+                  ws[f"B{row}"].fill = PatternFill("solid", fgColor="F4CCCC")
+              elif severity in ("MAJOR", "MEDIUM"):
+                  ws[f"B{row}"].fill = PatternFill("solid", fgColor="FFF2CC")
+              elif severity in ("MINOR", "LOW", "INFO"):
+                  ws[f"B{row}"].fill = PatternFill("solid", fgColor="D9EAD3")
+
+          summary = wb.create_sheet("Summary")
+          summary.append(["Group", "Value", "Count"])
+
+          counts_by_severity = {}
+          counts_by_type = {}
+          counts_by_status = {}
+
+          for issue in all_issues:
+              severity = issue.get("severity", "UNKNOWN")
+              issue_type = issue.get("type", "UNKNOWN")
+              status = issue.get("status", "UNKNOWN")
+
+              counts_by_severity[severity] = counts_by_severity.get(severity, 0) + 1
+              counts_by_type[issue_type] = counts_by_type.get(issue_type, 0) + 1
+              counts_by_status[status] = counts_by_status.get(status, 0) + 1
+
+          if all_issues:
+              for key, value in sorted(counts_by_severity.items()):
+                  summary.append(["Severity", key, value])
+
+              for key, value in sorted(counts_by_type.items()):
+                  summary.append(["Type", key, value])
+
+              for key, value in sorted(counts_by_status.items()):
+                  summary.append(["Status", key, value])
+          else:
+              summary.append(["Issues", "No findings", 0])
+
+          for cell in summary[1]:
+              cell.fill = header_fill
+              cell.font = header_font
+              cell.alignment = Alignment(horizontal="center", vertical="center")
+              cell.border = border
+
+          for row in summary.iter_rows(min_row=2):
+              for cell in row:
+                  cell.border = border
+                  cell.alignment = Alignment(vertical="center", wrap_text=True)
+
+          summary.column_dimensions["A"].width = 20
+          summary.column_dimensions["B"].width = 30
+          summary.column_dimensions["C"].width = 12
+          summary.auto_filter.ref = summary.dimensions
+
+          wb.save(OUTPUT_XLSX)
+
+          print(f"Created {OUTPUT_JSON}")
+          print(f"Created {OUTPUT_XLSX}")
+          print(f"Total SonarQube issues: {len(all_issues)}")
+          PY
+
+      - name: Upload SonarQube reports as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sonarqube-cloud-reports
+          path: |
+            sonarqube-issues.json
+            sonarqube-issues.xlsx
+          retention-days: 14
