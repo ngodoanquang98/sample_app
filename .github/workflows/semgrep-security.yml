@@ -1,0 +1,96 @@
+name: Semgrep Ruby Security Scan
+
+on:
+  # Mỗi lần push code lên các branch chính thì tự scan
+  push:
+    branches:
+      - main
+      - master
+      - develop
+
+  # Mỗi lần tạo hoặc cập nhật Pull Request thì tự scan
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+  # Cho phép bấm chạy thủ công trong tab Actions
+  workflow_dispatch:
+
+  # Tự động scan mỗi ngày lúc 00:20 giờ Việt Nam
+  # GitHub Actions dùng UTC, 17:20 UTC = 00:20 Việt Nam
+  schedule:
+    - cron: "20 17 * * *"
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  semgrep:
+    name: Security scan with Semgrep
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python for Semgrep
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Semgrep
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install semgrep
+
+      - name: Run Semgrep and create JSON report
+        run: |
+          semgrep scan \
+            --config p/security-audit \
+            --config p/owasp-top-ten \
+            --config p/ruby \
+            --exclude vendor \
+            --exclude tmp \
+            --exclude log \
+            --exclude public/assets \
+            --exclude node_modules \
+            --exclude .git \
+            --json \
+            --output semgrep-results.json \
+            . || true
+
+      - name: Run Semgrep and create SARIF report
+        run: |
+          semgrep scan \
+            --config p/security-audit \
+            --config p/owasp-top-ten \
+            --config p/ruby \
+            --exclude vendor \
+            --exclude tmp \
+            --exclude log \
+            --exclude public/assets \
+            --exclude node_modules \
+            --exclude .git \
+            --sarif \
+            --output semgrep-results.sarif \
+            . || true
+
+      - name: Upload Semgrep reports as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-ruby-security-reports
+          path: |
+            semgrep-results.json
+            semgrep-results.sarif
+          retention-days: 14
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep-results.sarif
