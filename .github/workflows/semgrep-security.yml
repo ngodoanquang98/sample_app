@@ -97,7 +97,6 @@ jobs:
 
           wb = Workbook()
 
-          # Sheet 1: Findings
           ws = wb.active
           ws.title = "Semgrep Findings"
 
@@ -219,7 +218,6 @@ jobs:
               elif severity == "INFO":
                   ws[f"B{row}"].fill = PatternFill("solid", fgColor="D9EAD3")
 
-          # Sheet 2: Summary
           summary = wb.create_sheet("Summary")
           summary.append(["Severity", "Count"])
 
@@ -272,7 +270,7 @@ jobs:
         with:
           sarif_file: semgrep-results.sarif
 
-    sonarqube:
+  sonarqube:
     name: SonarQube Cloud Scan
     runs-on: ubuntu-latest
 
@@ -287,7 +285,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Install Excel export library
+      - name: Install SonarQube Excel export libraries
         if: always()
         run: |
           python -m pip install --upgrade pip
@@ -299,6 +297,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: ngodoanquang98_sample_app
           SONAR_ORGANIZATION: ngodoanquang98
+          SONAR_BRANCH: ${{ github.ref_name }}
         run: |
           python - <<'PY'
           import json
@@ -311,6 +310,7 @@ jobs:
           SONAR_TOKEN = os.environ["SONAR_TOKEN"]
           PROJECT_KEY = os.environ["SONAR_PROJECT_KEY"]
           ORGANIZATION = os.environ["SONAR_ORGANIZATION"]
+          BRANCH = os.environ.get("SONAR_BRANCH", "")
 
           BASE_URL = "https://sonarcloud.io"
           OUTPUT_JSON = "sonarqube-issues.json"
@@ -321,7 +321,7 @@ jobs:
               "Authorization": f"Bearer {SONAR_TOKEN}"
           })
 
-          # Wait a little so the last analysis result is available.
+          # Đợi vài giây để SonarQube Cloud cập nhật kết quả analysis mới nhất
           time.sleep(5)
 
           all_issues = []
@@ -336,6 +336,9 @@ jobs:
                   "ps": page_size,
                   "resolved": "false"
               }
+
+              if BRANCH:
+                  params["branch"] = BRANCH
 
               response = session.get(
                   f"{BASE_URL}/api/issues/search",
@@ -366,6 +369,7 @@ jobs:
                   {
                       "projectKey": PROJECT_KEY,
                       "organization": ORGANIZATION,
+                      "branch": BRANCH,
                       "total": len(all_issues),
                       "issues": all_issues
                   },
@@ -381,7 +385,6 @@ jobs:
           thin = Side(style="thin", color="D9E2F3")
           border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-          # Sheet 1: Issues
           ws = wb.active
           ws.title = "SonarQube Issues"
 
@@ -514,7 +517,6 @@ jobs:
               elif severity in ("MINOR", "LOW", "INFO"):
                   ws[f"B{row}"].fill = PatternFill("solid", fgColor="D9EAD3")
 
-          # Sheet 2: Summary
           summary = wb.create_sheet("Summary")
           summary.append(["Group", "Value", "Count"])
 
