@@ -297,7 +297,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: ngodoanquang98_sample_app
           SONAR_ORGANIZATION: ngodoanquang98
-          SONAR_BRANCH: ${{ github.ref_name }}
         run: |
           python - <<'PY'
           import json
@@ -310,7 +309,6 @@ jobs:
           SONAR_TOKEN = os.environ["SONAR_TOKEN"]
           PROJECT_KEY = os.environ["SONAR_PROJECT_KEY"]
           ORGANIZATION = os.environ["SONAR_ORGANIZATION"]
-          BRANCH = os.environ.get("SONAR_BRANCH", "")
 
           BASE_URL = "https://sonarcloud.io"
           OUTPUT_JSON = "sonarqube-issues.json"
@@ -336,9 +334,6 @@ jobs:
                   "ps": page_size,
                   "resolved": "false"
               }
-
-              if BRANCH:
-                  params["branch"] = BRANCH
 
               response = session.get(
                   f"{BASE_URL}/api/issues/search",
@@ -369,7 +364,7 @@ jobs:
                   {
                       "projectKey": PROJECT_KEY,
                       "organization": ORGANIZATION,
-                      "branch": BRANCH,
+                      "branch": "default branch",
                       "total": len(all_issues),
                       "issues": all_issues
                   },
