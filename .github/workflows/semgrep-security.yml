@@ -1,4 +1,4 @@
-name: Semgrep Ruby Security Scan
+name: Security Scan - Semgrep and SonarQube
 
 on:
   # Mỗi lần push code lên các branch chính thì tự scan
@@ -7,6 +7,7 @@ on:
       - main
       - master
       - develop
+      - quangnd
 
   # Mỗi lần tạo hoặc cập nhật Pull Request thì tự scan
   pull_request:
@@ -30,7 +31,7 @@ permissions:
 
 jobs:
   semgrep:
-    name: Security scan with Semgrep
+    name: Semgrep Security Scan
     runs-on: ubuntu-latest
 
     steps:
@@ -85,7 +86,6 @@ jobs:
           import json
           from openpyxl import Workbook
           from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-          from openpyxl.utils import get_column_letter
 
           input_file = "semgrep-results.json"
           output_file = "semgrep-results.xlsx"
@@ -97,9 +97,7 @@ jobs:
 
           wb = Workbook()
 
-          # =========================
           # Sheet 1: Findings
-          # =========================
           ws = wb.active
           ws.title = "Semgrep Findings"
 
@@ -221,9 +219,7 @@ jobs:
               elif severity == "INFO":
                   ws[f"B{row}"].fill = PatternFill("solid", fgColor="D9EAD3")
 
-          # =========================
           # Sheet 2: Summary
-          # =========================
           summary = wb.create_sheet("Summary")
           summary.append(["Severity", "Count"])
 
@@ -275,3 +271,18 @@ jobs:
         if: always()
         with:
           sarif_file: semgrep-results.sarif
+
+  sonarqube:
+    name: SonarQube Cloud Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run SonarQube Cloud scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
